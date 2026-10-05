@@ -1,0 +1,29 @@
+{
+  "kind": "source-guide",
+  "source_head": "6b7047ada0bc2e5f5ba57648ecd5bd05fc4eaf56",
+  "source_tree": "a2274e2b936a0e62114251ba059af6899120fc16",
+  "source_repository": "https://github.com/MdSadman2004/Vanguard",
+  "nodes": [
+    {
+      "label": "Sample ledger",
+      "path": "sample_erp_data.csv",
+      "detail": "Illustrative utility, travel, and fuel transactions."
+    },
+    {
+      "label": "Calculation workflow",
+      "path": "main.py",
+      "detail": "Scope heuristics, constants, totals, and HTML export."
+    },
+    {
+      "label": "Stored HTML report",
+      "path": "esg_report.html",
+      "detail": "Committed demo output, not newly audited emissions."
+    }
+  ],
+  "caption": "Source guide drawn from repository files; not a runtime screenshot or fresh benchmark.",
+  "generated_by": "render_guides.py",
+  "image_dimensions": [
+    1600,
+    960
+  ]
+}

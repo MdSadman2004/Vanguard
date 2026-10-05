@@ -1,80 +1,109 @@
-![Vanguard](https://img.shields.io/badge/Vanguard-ESG%20Compliance%20Auditor-059669?style=for-the-badge)
-![LangGraph](https://img.shields.io/badge/LangGraph-0.2-1c1c1c?style=flat-square)
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python)
-![Pandas](https://img.shields.io/badge/Pandas-2.0-150458?style=flat-square&logo=pandas)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+# Vanguard — Ledger-to-Emissions Reporting Demo
 
-**ESG compliance auditor — map legacy ERP ledgers to GHG Protocol Scope 1/2/3 emissions.**
+![Source guide to Vanguard sample ledger, LangGraph calculation script, and stored HTML report](docs/portfolio/overview.png)
 
----
+*Source guide drawn from the files in this repository; not a runtime screenshot or a fresh benchmark.*
 
-## 🏗️ Pipeline
+**A small LangGraph workflow that turns a sample CSV ledger into an emissions-style HTML report.**
+Vanguard reads activity quantities, assigns one of three scope labels using
+keywords, multiplies by hardcoded factors, and renders totals with a transaction
+table. It demonstrates a data-to-report workflow, not verified ESG compliance.
 
-```mermaid
-graph LR
-    subgraph Input
-        ERP[Legacy ERP<br/>Ledger Data]
-        RULES[GHG Protocol<br/>Ruleset]
-    end
-    subgraph LangGraph Pipeline
-        EXTRACT[Extract<br/>Activity Data]
-        MAP[Map<br/>Emission Factors]
-        CALC[Calculate<br/>Scope 1/2/3]
-        AUDIT[Audit<br/>Discrepancies]
-        REPORT[Generate<br/>Report]
-    end
-    subgraph Output
-        RPT[Compliance<br/>Report]
-        EMISSIONS[Emissions<br/>Summary]
-    end
-    ERP --> EXTRACT
-    RULES --> MAP
-    EXTRACT --> MAP
-    MAP --> CALC
-    CALC --> AUDIT
-    AUDIT --> REPORT
-    REPORT --> RPT
-    REPORT --> EMISSIONS
-```
+## What the implementation does
 
----
+| Stage | Behavior |
+|---|---|
+| Normalize | Read CSV rows with `csv.DictReader`; use embedded examples if the file is absent. |
+| Classify | Recognize diesel/fuel as Scope 1 and grid/electricity/power as Scope 2. |
+| Calculate | Apply the selected factor to the numeric quantity and aggregate totals. |
+| Export | Write `esg_report.html` with scope bars, a footprint display, and ledger rows. |
 
-## ✨ Features
+All other descriptions fall into the Scope 3 flight category by default.
+There is no factor lookup service, rules-file loader, LLM call, or
+uncertainty/discrepancy audit node.
 
-- **ERP extraction** — read legacy ledger formats (CSV, Excel, DB)
-- **Emission factor mapping** — match activities to GHG Protocol factors
-- **Scope 1/2/3 calculation** — comprehensive emissions accounting
-- **Discrepancy detection** — flag missing or inconsistent data
-- **Compliance reporting** — structured reports with methodology notes
+## Getting started
 
----
-
-## 🚀 Quick Start
+Use a Python environment compatible with
+[requirements.txt](requirements.txt). Python 3.10+ is a reasonable starting
+point, but this repository does not declare a Python version or lockfile.
 
 ```bash
-pip install -r requirements.txt
-python -m vanguard.audit --ledger emissions_2024.csv --rules ghg_protocol.json
+git clone https://github.com/MdSadman2004/Vanguard.git
+cd Vanguard
+python -m venv .venv
 ```
 
----
+Activate the environment (`source .venv/bin/activate` on POSIX;
+`.venv\Scripts\Activate.ps1` in Windows PowerShell), then:
 
-## 📁 Project Structure
-
-```
-Vanguard/
-├── vanguard/
-│   ├── graph.py           # LangGraph pipeline
-│   ├── extract.py         # ERP data extraction
-│   ├── mapper.py          # Emission factor mapping
-│   ├── calculator.py      # Scope 1/2/3 math
-│   ├── audit.py           # Discrepancy detection
-│   └── reporter.py        # Compliance report generation
-├── tests/
-└── README.md
+```bash
+python -m pip install -r requirements.txt
+python main.py
 ```
 
----
+The entry point reads `sample_erp_data.csv` beside `main.py` and replaces
+`esg_report.html` in that directory. Open the generated report locally.
+There is no `vanguard.audit` module or `--ledger`/`--rules` command-line parser.
 
-## 📄 License
+The requirements list LangGraph, LangChain Core, python-dotenv, and Pydantic.
+The current calculation is ordinary Python with a LangGraph state workflow;
+Pandas, a database driver, and a model API key are not used by this script.
 
-MIT © Md Sadman Bin Masud
+## Input contract
+
+The sample CSV includes:
+
+```text
+TRANSACTION_ID,DATE,ACCOUNT,DESCRIPTION,AMOUNT,QTY
+```
+
+`DESCRIPTION` and `QTY` are required by the classifier. `QTY` must start with
+a numeric token. The next space-separated token, if present, is displayed as
+the unit; bare numeric quantities are also accepted. Sample values include
+`12500 kWh`, `3 tickets`, and `420 gallons`.
+
+The calculation uses quantity, not `AMOUNT`. Account codes do not determine
+scope. The units are displayed but are not validated or converted.
+To try another input, copy the sample first and change the input path in
+`main.py`; the script does not expose a file-selection CLI.
+
+## Demonstration factor table
+
+These constants are copied from `EMISSION_FACTORS` in the source, where they
+are described as metric tons CO2e per unit. They are **not certified factors**.
+
+| Factor key | Value in the code |
+|---|---:|
+| `scope_1_diesel` | 0.0101 |
+| `scope_2_electricity` | 0.00017 |
+| `scope_3_flights` | 0.68 |
+
+## Source guide
+
+| File | Purpose |
+|---|---|
+| [Workflow and calculation](main.py) | CSV loading, scope heuristics, factor constants, and HTML export. |
+| [Sample ledger](sample_erp_data.csv) | Three illustrative utility, travel, and fuel transactions. |
+| [Stored report](esg_report.html) | Committed demonstration output, not a fresh compliance result. |
+| [Dependencies](requirements.txt) | Declared dependency lower bounds. |
+
+## Scope & limitations
+
+- CSV is the implemented input format; no Excel or ERP/database integration is bundled.
+- Unknown activities silently use the flight factor; unsupported units can
+  still produce plausible-looking totals. There is no validation audit.
+- The factors have no linked provenance, geography, reporting-year selection,
+  supplier data, or unit-conversion logic in the implementation.
+- Scope labels are illustrative. This does not establish conformance with
+  GHG Protocol, regulatory disclosure rules, or third-party assurance requirements.
+- The report inserts row text into HTML without escaping. Use trusted sample data.
+  It also imports Google Fonts, so browser viewing can make external requests.
+- No dashboard server, benchmarks, or automated tests were run for this refresh.
+  Stored report values should not be presented as audited organizational emissions.
+
+## Credits and license
+
+Original README notice: `MIT © Md Sadman Bin Masud`.
+No standalone license file is present. This refresh preserves the existing
+notice without adding license terms or changing the project's licensing.
